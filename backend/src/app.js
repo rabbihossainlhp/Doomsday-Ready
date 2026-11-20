@@ -11,7 +11,7 @@ const PORT = process.env.PORT || 5000;
 
 app.use(
   cors({
-    origin: process.env.CLIENT_ORIGIN || 'http://localhost:5173',
+    origin:[ process.env.CLIENT_ORIGIN || 'http://localhost:5173', 'https://doomsday-ready-v1.vercel.app'],
   })
 );
 app.use(express.json());
