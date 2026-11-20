@@ -1,3 +1,5 @@
+import { indexMoviesById, compareMoviesByYear } from '../utils/movieUtils.js';
+
 export function resolvePrerequisiteIds(movies, rawPrereqs = []) {
   if (!Array.isArray(rawPrereqs)) {
     return { error: 'Prerequisites must be an array.' };
@@ -8,122 +10,90 @@ export function resolvePrerequisiteIds(movies, rawPrereqs = []) {
     movies.map((m) => [m.title.trim().toLowerCase(), String(m.id)])
   );
 
-  const resolved = [];
+  const ids = [];
   for (const item of rawPrereqs) {
-    const str = String(item).trim();
-    if (byId.has(str)) {
-      resolved.push(byId.get(str));
-    } else if (byTitle.has(str.toLowerCase())) {
-      resolved.push(byTitle.get(str.toLowerCase()));
-    } else {
-      return { error: `Unknown prerequisite: "${item}"` };
-    }
+    const key = String(item).trim();
+    const matchedId = byId.get(key) || byTitle.get(key.toLowerCase());
+    if (!matchedId) return { error: `Unknown prerequisite: "${item}"` };
+    ids.push(matchedId);
   }
 
-  return { ids: [...new Set(resolved)] };
+  return { ids: [...new Set(ids)] };
 }
 
 export function hasCycle(movies, candidateId, newPrereqIds = []) {
   const targetId = String(candidateId);
-  if (newPrereqIds.includes(targetId)) return true; // Self-loop
+  const nextPrereqs = newPrereqIds.map(String);
+  if (nextPrereqs.includes(targetId)) return true;
 
-  const adj = new Map();
-  for (const m of movies) {
-    adj.set(String(m.id), (m.prerequisites || []).map(String));
-  }
-  adj.set(targetId, newPrereqIds.map(String));
+  const adj = new Map(
+    movies.map((m) => [String(m.id), (m.prerequisites || []).map(String)])
+  );
+  adj.set(targetId, nextPrereqs);
 
-  // 0 = unvisited, 1 = visiting (in current recursion stack), 2 = visited
+  // 0 = unvisited, 1 = visiting (active path), 2 = visited (safe)
   const state = new Map();
 
   function dfs(nodeId) {
-    const current = state.get(nodeId) || 0;
-    if (current === 1) return true;
-    if (current === 2) return false;
+    const status = state.get(nodeId) || 0;
+    if (status === 1) return true;
+    if (status === 2) return false;
 
     state.set(nodeId, 1);
-    for (const nextId of adj.get(nodeId) || []) {
-      if (dfs(nextId)) return true;
+    for (const prereqId of adj.get(nodeId) || []) {
+      if (dfs(prereqId)) return true;
     }
     state.set(nodeId, 2);
     return false;
   }
 
-  for (const nodeId of adj.keys()) {
-    if (dfs(nodeId)) return true;
-  }
-
-  return false;
+  return [...adj.keys()].some((nodeId) => dfs(nodeId));
 }
 
 export function buildRewatchSequence(movies, targetMovieId) {
   const targetId = String(targetMovieId);
-  const byId = new Map(movies.map((m) => [String(m.id), m]));
+  const byId = indexMoviesById(movies);
   if (!byId.has(targetId)) return null;
 
-  // 1. Collect all transitive prerequisites (excluding target movie itself)
-  const requiredIds = new Set();
+  // 1. Gather all prerequisite movies needed before target (excluding target itself)
+  const needed = new Set();
   const stack = [...(byId.get(targetId).prerequisites || []).map(String)];
 
   while (stack.length > 0) {
     const id = stack.pop();
-    if (id === targetId || requiredIds.has(id)) continue;
-    const movie = byId.get(id);
-    if (!movie) continue;
-
-    requiredIds.add(id);
-    for (const prereqId of movie.prerequisites || []) {
+    if (id === targetId || needed.has(id) || !byId.has(id)) continue;
+    needed.add(id);
+    for (const prereqId of byId.get(id).prerequisites || []) {
       stack.push(String(prereqId));
     }
   }
 
-  // 2. Kahn's algorithm for topological ordering with release year tie-breaker
-  const inDegree = new Map();
-  const dependents = new Map();
-
-  for (const id of requiredIds) {
-    inDegree.set(id, 0);
-    dependents.set(id, []);
-  }
-
-  for (const id of requiredIds) {
-    const validPrereqs = (byId.get(id).prerequisites || [])
-      .map(String)
-      .filter((p) => requiredIds.has(p));
-
-    inDegree.set(id, validPrereqs.length);
-    for (const prereqId of validPrereqs) {
-      dependents.get(prereqId).push(id);
-    }
-  }
-
-  const compareByYear = (a, b) => {
-    const yearA = byId.get(a)?.year;
-    const yearB = byId.get(b)?.year;
-    const hasYearA = Number.isFinite(yearA);
-    const hasYearB = Number.isFinite(yearB);
-
-    if (hasYearA && hasYearB && yearA !== yearB) return yearA - yearB;
-    if (hasYearA !== hasYearB) return hasYearA ? -1 : 1;
-    return a.localeCompare(b);
-  };
-
-  const queue = [...requiredIds]
-    .filter((id) => inDegree.get(id) === 0)
-    .sort(compareByYear);
-
+  // 2. Visit prerequisites before dependents so watch order is always valid
   const ordered = [];
-  while (queue.length > 0) {
-    const currentId = queue.shift();
-    ordered.push(byId.get(currentId));
+  const visited = new Set();
 
-    for (const nextId of dependents.get(currentId) || []) {
-      inDegree.set(nextId, inDegree.get(nextId) - 1);
-      if (inDegree.get(nextId) === 0) {
-        queue.push(nextId);
-        queue.sort(compareByYear);
-      }
+  function addWithPrerequisites(id) {
+    if (visited.has(id)) return;
+    visited.add(id);
+
+    const movie = byId.get(id);
+    const prereqs = (movie.prerequisites || [])
+      .map(String)
+      .filter((pid) => needed.has(pid) && byId.has(pid))
+      .sort((a, b) => compareMoviesByYear(byId.get(a), byId.get(b)));
+
+    for (const prereqId of prereqs) {
+      addWithPrerequisites(prereqId);
     }
+    ordered.push(movie);
+  }
+
+  const sortedNeeded = [...needed].sort((a, b) =>
+    compareMoviesByYear(byId.get(a), byId.get(b))
+  );
+
+  for (const id of sortedNeeded) {
+    addWithPrerequisites(id);
   }
 
   return ordered;

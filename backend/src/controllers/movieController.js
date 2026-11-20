@@ -186,21 +186,13 @@ export function createMovie(req, res) {
   res.status(201).json(formatMovie(newMovie, store.movies));
 }
 
+
+
+
 export function getRewatchPlan(req, res) {
   const { id } = req.params;
 
-  // Support matching either movie ID or slug like "doomsday" / "secret-wars"
   let target = store.movies.find((m) => String(m.id) === String(id));
-  if (!target && id.toLowerCase() === 'doomsday') {
-    target = store.movies.find((m) =>
-      m.title.toLowerCase().includes('doomsday')
-    );
-  }
-  if (!target && id.toLowerCase() === 'secret-wars') {
-    target = store.movies.find((m) =>
-      m.title.toLowerCase().includes('secret wars')
-    );
-  }
 
   if (!target) {
     return res.status(404).json({ message: 'Target movie not found.' });

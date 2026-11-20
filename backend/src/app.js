@@ -16,9 +16,6 @@ app.use(
 );
 app.use(express.json());
 
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', service: 'doomsday-ready-api' });
-});
 
 app.use('/api/movies', movieRoutes);
 app.use('/api', bookingRoutes);
