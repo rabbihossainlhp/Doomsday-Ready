@@ -126,6 +126,21 @@ export function createMovie(req, res) {
   }
 
 
+  if (
+  Array.isArray(prerequisites) &&
+  prerequisites.some(
+    (item) => String(item).trim().toLowerCase() === normalizedTitle
+  )
+
+  
+) {
+  return res.status(409).json({
+    code: 'CIRCULAR_DEPENDENCY',
+    message: 'A movie cannot depend on itself.',
+  });
+}
+
+
   const numericYear = Number(year);
   const numericRuntime = Number(runtime);
 
