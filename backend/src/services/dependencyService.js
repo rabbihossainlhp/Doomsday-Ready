@@ -97,9 +97,20 @@ export function buildRewatchSequence(movies, targetMovieId) {
     }
   }
 
+  const compareByYear = (a, b) => {
+    const yearA = byId.get(a)?.year;
+    const yearB = byId.get(b)?.year;
+    const hasYearA = Number.isFinite(yearA);
+    const hasYearB = Number.isFinite(yearB);
+
+    if (hasYearA && hasYearB && yearA !== yearB) return yearA - yearB;
+    if (hasYearA !== hasYearB) return hasYearA ? -1 : 1;
+    return a.localeCompare(b);
+  };
+
   const queue = [...requiredIds]
     .filter((id) => inDegree.get(id) === 0)
-    .sort((a, b) => byId.get(a).year - byId.get(b).year);
+    .sort(compareByYear);
 
   const ordered = [];
   while (queue.length > 0) {
@@ -110,7 +121,7 @@ export function buildRewatchSequence(movies, targetMovieId) {
       inDegree.set(nextId, inDegree.get(nextId) - 1);
       if (inDegree.get(nextId) === 0) {
         queue.push(nextId);
-        queue.sort((a, b) => byId.get(a).year - byId.get(b).year);
+        queue.sort(compareByYear);
       }
     }
   }

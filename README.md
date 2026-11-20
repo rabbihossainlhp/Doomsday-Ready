@@ -59,6 +59,8 @@ Cinema
 - Cinema bundle sizes are unique integers from 1 through 500; each cinema has
   between 1 and 10 sizes.
 - The app uses in-memory storage to keep this assessment implementation small.
+- Editing prerequisites currently uses a browser prompt. The booking page's
+  quick examples use the seeded cinema's bundle sizes `[6, 9, 20]`.
 
 ## Validation
 

@@ -186,46 +186,6 @@ export function createMovie(req, res) {
   res.status(201).json(formatMovie(newMovie, store.movies));
 }
 
-export function toggleMovieWatched(req, res) {
-  const { id } = req.params;
-  const movie = store.movies.find((m) => String(m.id) === String(id));
-
-  if (!movie) {
-    return res.status(404).json({ message: 'Movie not found.' });
-  }
-
-  movie.watched =
-    typeof req.body.watched === 'boolean' ? req.body.watched : !movie.watched;
-
-  res.json(formatMovie(movie, store.movies));
-}
-
-export function updateMoviePrerequisites(req, res) {
-  const { id } = req.params;
-  const movie = store.movies.find((m) => String(m.id) === String(id));
-
-  if (!movie) {
-    return res.status(404).json({ message: 'Movie not found.' });
-  }
-
-  const { ids, error } = resolvePrerequisiteIds(
-    store.movies,
-    req.body.prerequisites || []
-  );
-  if (error) {
-    return res.status(400).json({ message: error });
-  }
-
-  if (hasCycle(store.movies, movie.id, ids)) {
-    return res.status(400).json({
-      message: 'Updating prerequisites would create a circular dependency.',
-    });
-  }
-
-  movie.prerequisites = ids;
-  res.json(formatMovie(movie, store.movies));
-}
-
 export function getRewatchPlan(req, res) {
   const { id } = req.params;
 

@@ -12,12 +12,12 @@ export default function CalculationResult({ result, activeSeats, onSelectExample
         <div className="font-mono-tech flex items-center gap-2 text-[10px]">
           <button
             type="button"
-            onClick={() => onSelectExample(35)}
+            onClick={() => onSelectExample(44)}
             className={`rounded px-2.5 py-1 ${
-              Number(activeSeats) === 35 ? 'bg-[#1a293d] text-white' : 'bg-[#0a1422] text-slate-400'
+              Number(activeSeats) === 44 ? 'bg-[#1a293d] text-white' : 'bg-[#0a1422] text-slate-400'
             }`}
           >
-            Example: 35 seats
+            Example: 44 seats
           </button>
           <button
             type="button"

@@ -70,7 +70,7 @@ export const store = {
       runtime: 165,
       releaseDate: 'May 2026',
       prerequisites: ['7'],
-      watched: false,
+      watched: true,
     },
   ],
   cinemas: [
