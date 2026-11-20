@@ -7,7 +7,7 @@ prerequisites and calculating exact opening-night seat bundles.
 
 - Manage movies and mark them as watched
 - Set and update movie prerequisites
-- Generate a prerequisiteee-aware rewatch order
+- Generate a prerequisite-aware rewatch order
 - Detect circular prerequisite dependencies
 - Create cinemas and configure available seat bundles
 - Calculate exact booking combinations for a requested group size
@@ -67,7 +67,6 @@ All application endpoints are prefixed with `/api`.
 
 | Method | Path | Purpose |
 | --- | --- | --- |
-|  
 | `GET` | `/api/movies` | List movies |
 | `POST` | `/api/movies` | Create a movie |
 | `PATCH` | `/api/movies/:id` | Update a movie |
@@ -127,7 +126,7 @@ npm run lint
 npm run build
 ```
 
-## Development Process & AI Use
+## Development Process and AI Use
 
 To be completely transparent about how this project was built:
 
